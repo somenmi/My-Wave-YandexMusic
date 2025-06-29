@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YYM - Yalkee Yandex Music</title>
+    <style>
+        :root {
+            --primary: #4a4a8c;
+            --primary-dark: #3a3a7c;
+            --secondary: #8c4a4a;
+            --accent: #4a8c8c;
+            --light: #f5f5f5;
+            --dark: #333;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --popup-width: 600px;
+            --popup-height: 601px;
+        }
+
+        ::-webkit-scrollbar {
+            display: block;
+            background: #343434;
+            width: 1px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            width: var(--popup-width);
+            height: var(--popup-height);
+            min-width: var(--popup-width);
+            min-height: var(--popup-height);
+            overflow: auto;
+            background: linear-gradient(135deg, #1a2a6c, #a83434, #1a2a6c);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: var(--light);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            scrollbar-width: none;
+        }
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            background: rgba(25, 25, 50, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        header {
+            background: rgba(20, 20, 40, 0.95);
+            padding-top: 6px;
+            text-align: center;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 6px;
+            background: linear-gradient(90deg, #ff8a00, #2ee5dc, #c32258);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: gradientText 3s ease infinite;
+            background-size: 300% 300%;
+        }
+
+        @keyframes gradientText {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .author {
+            color: #aaa;
+            font-style: italic;
+            font-size: 0.75rem;
+            padding-bottom: 10px;
+        }
+
+        .presets {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 18px;
+            background: rgba(30, 30, 50, 0.7);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .preset-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 50px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(70, 70, 120, 0.8);
+            color: rgb(255, 255, 255);
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+            letter-spacing: 0.5px;
+            text-shadow: 0px 1.5px 2px #323232;
+        }
+
+        .preset-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+
+        .preset-btn:hover::before {
+            left: 100%;
+        }
+
+        .preset-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .preset-btn:active {
+            transform: translateY(1px);
+        }
+
+        #normal-btn {
+            background: linear-gradient(135deg, #4a8c4a, #8c8c4a, #4a8c8c);
+        }
+
+        #bw-btn {
+            background: linear-gradient(135deg, #333, #666, #999);
+        }
+
+        #sepia-btn {
+            background: linear-gradient(135deg, #8c6d46, #b38b5d, #d9b38c);
+        }
+
+        #hue-btn {
+            background: linear-gradient(135deg, #4a4a8c, #8c4a8c, #4a8c8c);
+        }
+
+        .controls {
+            padding-top: 15px;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            background: rgba(40, 40, 70, 0.6);
+            padding: 15px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .slider-container:hover {
+            background: rgba(50, 50, 90, 0.8);
+            transform: scale(102%);
+        }
+
+        .zoom-text {
+            transition: all 0.1s ease-in-out;
+
+        }
+
+        .zoom-text:hover {
+            font-size: 130%;
+        }
+
+        label {
+            min-width: 150px;
+            font-weight: bold;
+            color: #ddd;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 10px;
+            -webkit-appearance: none;
+            background: rgba(100, 100, 150, 0.3);
+            border-radius: 5px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            border: 2px solid white;
+            transition: all 0.2s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: #5bc0c0;
+        }
+
+        .value-display {
+            min-width: 60px;
+            text-align: right;
+            font-family: monospace;
+            font-weight: bold;
+            color: #ffcc00;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin-left: 15px;
+        }
+
+        .preview {
+            text-align: center;
+            padding: 20px;
+            background: rgba(20, 20, 40, 0.9);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .preview-title {
+            margin-bottom: 15px;
+            color: #ddd;
+        }
+
+        .preview-boxes {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .preview-box {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #4a4a8c, #8c4a8c);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.8rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease;
+        }
+
+        .preview-box:hover {
+            transform: rotate(5deg) scale(1.1);
+        }
+
+        .preview-box:nth-child(2) {
+            background: linear-gradient(135deg, #8c4a4a, #b38b5d);
+        }
+
+        .preview-box:nth-child(3) {
+            background: linear-gradient(135deg, #4a8c8c, #4a4a8c);
+        }
+
+        .vscode-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #0078d7;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .vscode-badge::before {
+            content: "⌨";
+            font-size: 1.2rem;
+        }
+
+        footer {
+            text-align: center;
+            padding-top: 12px;
+            padding-bottom: 32px;
+            background: rgba(15, 15, 30, 0.95);
+            color: #aaa;
+            font-size: 0.7rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @media (max-width: 600px) {
+            .presets {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .preset-btn {
+                width: 80%;
+            }
+
+            .slider-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            label {
+                margin-bottom: 10px;
+            }
+
+            input[type="range"] {
+                width: 100%;
+            }
+
+            .value-display {
+                align-self: flex-end;
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>💥Моя Волна</h1>
+            <p class="author">Разработано © Yalkee</p>
+        </header>
+        <div class="presets">
+            <button id="normal-btn" class="preset-btn">Обычный</button>
+            <button id="bw-btn" class="preset-btn">Чёрно-белый</button>
+            <button id="sepia-btn" class="preset-btn">Сепия</button>
+            <button id="hue-btn" class="preset-btn">Оттенок</button>
+        </div>
+        <div class="controls zoom-text">
+            <div class="slider-container">
+                <label for="grayscale">Чёрно-белый:</label>
+                <input type="range" id="grayscale" min="0" max="1" step="0.01" value="0">
+                <span class="value-display" id="grayscale-value">0</span>
+            </div>
+
+            <div class="slider-container">
+                <label for="brightness">Яркость:</label>
+                <input type="range" id="brightness" min="0" max="2" step="0.01" value="1">
+                <span class="value-display" id="brightness-value">1</span>
+            </div>
+
+            <div class="slider-container">
+                <label for="sepia">Сепия:</label>
+                <input type="range" id="sepia" min="0" max="1" step="0.01" value="0">
+                <span class="value-display" id="sepia-value">0</span>
+            </div>
+
+            <div class="slider-container">
+                <label for="hue-rotate">HUE:</label>
+                <input type="range" id="hue-rotate" min="0" max="360" step="1" value="0">
+                <span class="value-display" id="hue-rotate-value">0°</span>
+            </div>
+
+            <div class="slider-container">
+                <label for="saturate">Насыщенность:</label>
+                <input type="range" id="saturate" min="0" max="600" step="0.01" value="0">
+                <span class="value-display" id="saturate-value">100%</span>
+            </div>
+        </div>
+        <footer>
+            <p>Расширение для Chrome и Yandex Browser | Применяйте пользовательские фильтры к «Моей Волне»</p>
+        </footer>
+    </div>
+    <script src="popup.js"></script>
+</body>
+
+</html>
