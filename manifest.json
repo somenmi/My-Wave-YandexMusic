@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "Моя волна | Яндекс Музыка | by Yalkee",
     "short_name": "Моя волна",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Пользовательские фильтры для «Моей Волны» на «Яндекс Музыке»",
     "author": "Yalkee",
     "homepage_url": "https://github.com/Yalkee",

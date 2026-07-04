@@ -1,9 +1,11 @@
-const style = document.createElement('style');
-style.id = 'vibe-hider-style';
-style.textContent = `
-  body.hide-canvas canvas { display: none !important; }
+// ==========================================
+// Yandex Music Mod ny Yalkee (Web Extension)
+// ==========================================
 
-  body.hide-glow .DefaultLayout_rootNewVibe__MSDOn {
+const style = document.createElement('style');
+style.id = 'yalkee-mod-style';
+style.textContent = `
+  body:not(.show-glow) .DefaultLayout_rootNewVibe__MSDOn {
     --vibe-gradient-stop-0: transparent !important;
     --vibe-gradient-stop-1: transparent !important;
     --vibe-gradient-stop-2: transparent !important;
@@ -27,15 +29,52 @@ style.textContent = `
     --vibe-gradient-stop-20: transparent !important;
   }
 
-  body.hide-my-wave-label .VibeResetButton_root__ju8pE { display: none !important; }
+  .VibeResetButton_root__ju8pE,
+  .MainPage_actionsBar__agoxp {
+    display: none !important;
+  }
 
-  body.hide-feedback .MainPage_actionsBar__agoxp { display: none !important; }
+  .VibeWidgetAnimation_root__7fpeP canvas {
+    display: none !important;
+  }
+
+  body.show-canvas .VibeWidgetAnimation_root__7fpeP canvas {
+    display: block !important;
+  }
+
+  .VibePage_words__39Mii {
+    display: none !important;
+  }
+
+  .VibePage_playerBlock__b6ZRu {
+    height: auto !important;
+    flex-basis: auto !important;
+  }
+
+  body.minimal-mode .VibePage_root__dGvPX > *:not(.Navbar_root__chF4R):not(.VibePage_meta__kWwRE),
+  body.minimal-mode .Navbar_root__chF4R {
+    display: none !important;
+  }
 `;
 document.head.appendChild(style);
 
-function applySettings(settings) {
-    const filterValue = `grayscale(${settings.grayscale}) brightness(${settings.brightness}) sepia(${settings.sepia}) hue-rotate(${settings.hueRotate}deg) saturate(${settings.saturate}%)`;
+let settings = {
+    showCanvas: false,
+    showGlow: false,
+    minimalMode: false,
+    grayscale: 0,
+    brightness: 1,
+    sepia: 0,
+    hueRotate: 0,
+    saturate: 100
+};
 
+function applySettings() {
+    document.body.classList.toggle('show-canvas', settings.showCanvas);
+    document.body.classList.toggle('show-glow', settings.showGlow);
+    document.body.classList.toggle('minimal-mode', settings.minimalMode);
+
+    const filterValue = `grayscale(${settings.grayscale}) brightness(${settings.brightness}) sepia(${settings.sepia}) hue-rotate(${settings.hueRotate}deg) saturate(${settings.saturate}%)`;
     document.querySelectorAll('canvas').forEach(canvas => {
         canvas.style.filter = filterValue;
         canvas.style.webkitFilter = filterValue;
@@ -45,37 +84,26 @@ function applySettings(settings) {
             parentDiv.style.webkitFilter = filterValue;
         }
     });
+}
 
-    document.body.classList.toggle('hide-canvas', settings.hideCanvas);
-    document.body.classList.toggle('hide-glow', settings.hideGlow);
-    document.body.classList.toggle('hide-my-wave-label', settings.hideMyWaveLabel);
-    document.body.classList.toggle('hide-feedback', settings.hideFeedback);
+function saveSettings() {
+    chrome.storage.local.set({ vibeFilterSettings: settings });
 }
 
 chrome.storage.local.get('vibeFilterSettings', (result) => {
-    const defaults = {
-        grayscale: 0, brightness: 1, sepia: 0, hueRotate: 0, saturate: 100,
-        hideCanvas: false, hideGlow: false,
-        hideMyWaveLabel: false, hideFeedback: false
-    };
-    applySettings(result.vibeFilterSettings || defaults);
+    if (result.vibeFilterSettings) {
+        settings = { ...settings, ...result.vibeFilterSettings };
+    }
+    applySettings();
 });
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request) => {
     if (request.action === 'updateSettings') {
-        applySettings(request.settings);
-        chrome.storage.local.set({ vibeFilterSettings: request.settings });
+        settings = { ...settings, ...request.settings };
+        applySettings();
+        saveSettings();
     }
 });
 
-const observer = new MutationObserver(() => {
-    chrome.storage.local.get('vibeFilterSettings', (result) => {
-        const defaults = {
-            grayscale: 0, brightness: 1, sepia: 0, hueRotate: 0, saturate: 100,
-            hideCanvas: false, hideGlow: false,
-            hideMyWaveLabel: false, hideFeedback: false
-        };
-        applySettings(result.vibeFilterSettings || defaults);
-    });
-});
+const observer = new MutationObserver(() => applySettings());
 observer.observe(document.body, { childList: true, subtree: true });

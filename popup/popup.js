@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', () => {
     const grayscaleSlider = document.getElementById('grayscale');
     const brightnessSlider = document.getElementById('brightness');
     const sepiaSlider = document.getElementById('sepia');
@@ -13,8 +13,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const hideCanvas = document.getElementById('hideCanvas');
     const hideGlow = document.getElementById('hideGlow');
-    const hideMyWaveLabel = document.getElementById('hideMyWaveLabel');
-    const hideFeedback = document.getElementById('hideFeedback');
+    const minimalMode = document.getElementById('minimalMode');
+    const masterToggle = document.getElementById('masterToggle');
 
     function updateDisplay() {
         grayscaleVal.textContent = grayscaleSlider.value;
@@ -26,15 +26,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function buildSettings() {
         return {
+            showCanvas: !hideCanvas.checked,
+            showGlow: !hideGlow.checked,
+            minimalMode: minimalMode.checked,
             grayscale: parseFloat(grayscaleSlider.value),
             brightness: parseFloat(brightnessSlider.value),
             sepia: parseFloat(sepiaSlider.value),
             hueRotate: parseInt(hueSlider.value),
-            saturate: parseFloat(saturateSlider.value),
-            hideCanvas: hideCanvas.checked,
-            hideGlow: hideGlow.checked,
-            hideMyWaveLabel: hideMyWaveLabel.checked,
-            hideFeedback: hideFeedback.checked
+            saturate: parseFloat(saturateSlider.value)
         };
     }
 
@@ -42,104 +41,57 @@ document.addEventListener('DOMContentLoaded', function () {
         const settings = buildSettings();
         chrome.storage.local.set({ vibeFilterSettings: settings }, () => {
             chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                if (tabs[0]) {
-                    chrome.tabs.sendMessage(tabs[0].id, {
-                        action: 'updateSettings',
-                        settings: settings
-                    }).catch(() => { });
-                }
+                if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, { action: 'updateSettings', settings }).catch(() => { });
             });
         });
     }
 
-    chrome.storage.local.get('vibeFilterSettings', (result) => {
-        const defaults = {
-            grayscale: 0,
-            brightness: 1,
-            sepia: 0,
-            hueRotate: 0,
-            saturate: 100,
-            hideCanvas: false,
-            hideGlow: false,
-            hideMyWaveLabel: false,
-            hideFeedback: false
-        };
-        const s = result.vibeFilterSettings || defaults;
-
-        grayscaleSlider.value = s.grayscale;
-        brightnessSlider.value = s.brightness;
-        sepiaSlider.value = s.sepia;
-        hueSlider.value = s.hueRotate;
-        saturateSlider.value = s.saturate;
-        hideCanvas.checked = s.hideCanvas || false;
-        hideGlow.checked = s.hideGlow || false;
-        hideMyWaveLabel.checked = s.hideMyWaveLabel || false;
-        hideFeedback.checked = s.hideFeedback || false;
-
-        updateDisplay();
-
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs[0]) {
-                chrome.tabs.sendMessage(tabs[0].id, {
-                    action: 'updateSettings',
-                    settings: buildSettings()
-                }).catch(() => { });
-            }
+    function loadSettings() {
+        chrome.storage.local.get('vibeFilterSettings', (result) => {
+            const s = result.vibeFilterSettings || {};
+            grayscaleSlider.value = s.grayscale ?? 0;
+            brightnessSlider.value = s.brightness ?? 1;
+            sepiaSlider.value = s.sepia ?? 0;
+            hueSlider.value = s.hueRotate ?? 0;
+            saturateSlider.value = s.saturate ?? 100;
+            hideCanvas.checked = !(s.showCanvas ?? false);
+            hideGlow.checked = !(s.showGlow ?? false);
+            minimalMode.checked = s.minimalMode ?? false;
+            updateDisplay();
         });
-    });
+    }
+
+    loadSettings();
 
     [grayscaleSlider, brightnessSlider, sepiaSlider, hueSlider, saturateSlider].forEach(el => {
-        el.addEventListener('input', () => {
-            updateDisplay();
-            saveAndSend();
-        });
+        el.addEventListener('input', () => { updateDisplay(); saveAndSend(); });
     });
-
-    [hideCanvas, hideGlow, hideMyWaveLabel, hideFeedback].forEach(el => {
+    [hideCanvas, hideGlow, minimalMode].forEach(el => {
         el.addEventListener('change', saveAndSend);
     });
 
+    masterToggle.addEventListener('click', () => {
+        hideCanvas.checked = !hideCanvas.checked;
+        hideGlow.checked = !hideGlow.checked;
+        minimalMode.checked = !minimalMode.checked;
+        saveAndSend();
+    });
+
     document.getElementById('normal-btn').addEventListener('click', () => {
-        grayscaleSlider.value = 0;
-        brightnessSlider.value = 1;
-        sepiaSlider.value = 0;
-        hueSlider.value = 0;
-        saturateSlider.value = 100;
-        hideCanvas.checked = false;
-        hideGlow.checked = false;
-        hideMyWaveLabel.checked = false;
-        hideFeedback.checked = false;
-        updateDisplay();
-        saveAndSend();
+        grayscaleSlider.value = 0; brightnessSlider.value = 1; sepiaSlider.value = 0; hueSlider.value = 0; saturateSlider.value = 100;
+        hideCanvas.checked = false; hideGlow.checked = false; minimalMode.checked = false;
+        updateDisplay(); saveAndSend();
     });
-
     document.getElementById('bw-btn').addEventListener('click', () => {
-        grayscaleSlider.value = 1;
-        brightnessSlider.value = 0.75;
-        sepiaSlider.value = 0;
-        hueSlider.value = 0;
-        saturateSlider.value = 100;
-        updateDisplay();
-        saveAndSend();
+        grayscaleSlider.value = 1; brightnessSlider.value = 0.75; sepiaSlider.value = 0; hueSlider.value = 0; saturateSlider.value = 100;
+        updateDisplay(); saveAndSend();
     });
-
     document.getElementById('sepia-btn').addEventListener('click', () => {
-        grayscaleSlider.value = 0.5;
-        brightnessSlider.value = 0.65;
-        sepiaSlider.value = 1;
-        hueSlider.value = 0;
-        saturateSlider.value = 100;
-        updateDisplay();
-        saveAndSend();
+        grayscaleSlider.value = 0.5; brightnessSlider.value = 0.65; sepiaSlider.value = 1; hueSlider.value = 0; saturateSlider.value = 100;
+        updateDisplay(); saveAndSend();
     });
-
     document.getElementById('hue-btn').addEventListener('click', () => {
-        grayscaleSlider.value = 0;
-        brightnessSlider.value = 1;
-        sepiaSlider.value = 0;
-        hueSlider.value = 200;
-        saturateSlider.value = 100;
-        updateDisplay();
-        saveAndSend();
+        grayscaleSlider.value = 0; brightnessSlider.value = 1; sepiaSlider.value = 0; hueSlider.value = 200; saturateSlider.value = 100;
+        updateDisplay(); saveAndSend();
     });
 });
