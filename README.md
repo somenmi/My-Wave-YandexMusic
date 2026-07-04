@@ -13,7 +13,7 @@
 <div align="center">
 
 [![Chromium](https://shields.io/badge/WEB-EXT-pink.svg)](https://chrome.google.com/webstore)
-![Version](https://shields.io/badge/version-1.1.0-pink.svg)
+![Version](https://shields.io/badge/version-1.2.0-pink.svg)
 
 </div>
 
