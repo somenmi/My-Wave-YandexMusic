@@ -2,10 +2,10 @@
     "manifest_version": 3,
     "name": "Моя волна | Яндекс Музыка | by Yalkee",
     "short_name": "Моя волна",
-    "version": "1.0.1",
-    "description": "Пользовательские фильтры к элементу: «Моя Волна» (анимация) | Яндекс Музыка",
+    "version": "1.1.0",
+    "description": "Пользовательские фильтры для «Моей Волны» на «Яндекс Музыке»",
     "author": "Yalkee",
-    "homepage_url": "https://yalkee.vercel.app",
+    "homepage_url": "https://github.com/Yalkee",
     "icons": {
         "16": "icons/icon16.png",
         "48": "icons/icon48.png",

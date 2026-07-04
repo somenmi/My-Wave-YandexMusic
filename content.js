@@ -1,46 +1,44 @@
-// Внедряем CSS при загрузке
-const cssPath = chrome.runtime.getURL('injected/filter.css');
-const link = document.createElement('link');
-link.id = 'vibe-filter-css';
-link.rel = 'stylesheet';
-link.type = 'text/css';
-link.href = cssPath;
-document.head.appendChild(link);
+const style = document.createElement('style');
+style.id = 'vibe-hider-style';
+style.textContent = `
+  body.hide-canvas canvas { display: none !important; }
 
-// Применяем фильтры сразу при загрузке страницы
-function applySavedFilters() {
-    chrome.storage.local.get(['vibeFilterSettings'], (result) => {
-        const defaults = { grayscale: 0, brightness: 1, sepia: 0, hueRotate: 0 };
-        const settings = result.vibeFilterSettings || defaults;
-        updateFilter(settings);
-    });
-}
+  body.hide-glow .DefaultLayout_rootNewVibe__MSDOn {
+    --vibe-gradient-stop-0: transparent !important;
+    --vibe-gradient-stop-1: transparent !important;
+    --vibe-gradient-stop-2: transparent !important;
+    --vibe-gradient-stop-3: transparent !important;
+    --vibe-gradient-stop-4: transparent !important;
+    --vibe-gradient-stop-5: transparent !important;
+    --vibe-gradient-stop-6: transparent !important;
+    --vibe-gradient-stop-7: transparent !important;
+    --vibe-gradient-stop-8: transparent !important;
+    --vibe-gradient-stop-9: transparent !important;
+    --vibe-gradient-stop-10: transparent !important;
+    --vibe-gradient-stop-11: transparent !important;
+    --vibe-gradient-stop-12: transparent !important;
+    --vibe-gradient-stop-13: transparent !important;
+    --vibe-gradient-stop-14: transparent !important;
+    --vibe-gradient-stop-15: transparent !important;
+    --vibe-gradient-stop-16: transparent !important;
+    --vibe-gradient-stop-17: transparent !important;
+    --vibe-gradient-stop-18: transparent !important;
+    --vibe-gradient-stop-19: transparent !important;
+    --vibe-gradient-stop-20: transparent !important;
+  }
 
-// Запускаем при загрузке
-applySavedFilters();
+  body.hide-my-wave-label .VibeResetButton_root__ju8pE { display: none !important; }
 
-// Также применяем при навигации (если страница динамическая)
-chrome.runtime.onMessage.addListener((request) => {
-    if (request.action === "updateFilter") {
-        updateFilter(request.settings);
-    }
-});
+  body.hide-feedback .MainPage_actionsBar__agoxp { display: none !important; }
+`;
+document.head.appendChild(style);
 
-function updateFilter(settings) {
-    const filterValue = `
-        grayscale(${settings.grayscale}) 
-        brightness(${settings.brightness}) 
-        sepia(${settings.sepia}) 
-        hue-rotate(${settings.hueRotate}deg)
-        saturate(${settings.saturate}%)
-    `.trim().replace(/\s+/g, ' ');
+function applySettings(settings) {
+    const filterValue = `grayscale(${settings.grayscale}) brightness(${settings.brightness}) sepia(${settings.sepia}) hue-rotate(${settings.hueRotate}deg) saturate(${settings.saturate}%)`;
 
-    // Применяем ко всем canvas и их родительским div
     document.querySelectorAll('canvas').forEach(canvas => {
         canvas.style.filter = filterValue;
         canvas.style.webkitFilter = filterValue;
-
-        // Также применяем к родительскому div, если он есть
         const parentDiv = canvas.closest('div');
         if (parentDiv) {
             parentDiv.style.filter = filterValue;
@@ -48,22 +46,36 @@ function updateFilter(settings) {
         }
     });
 
-    console.log('Applied filter:', filterValue);
+    document.body.classList.toggle('hide-canvas', settings.hideCanvas);
+    document.body.classList.toggle('hide-glow', settings.hideGlow);
+    document.body.classList.toggle('hide-my-wave-label', settings.hideMyWaveLabel);
+    document.body.classList.toggle('hide-feedback', settings.hideFeedback);
 }
 
+chrome.storage.local.get('vibeFilterSettings', (result) => {
+    const defaults = {
+        grayscale: 0, brightness: 1, sepia: 0, hueRotate: 0, saturate: 100,
+        hideCanvas: false, hideGlow: false,
+        hideMyWaveLabel: false, hideFeedback: false
+    };
+    applySettings(result.vibeFilterSettings || defaults);
+});
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'updateSettings') {
+        applySettings(request.settings);
+        chrome.storage.local.set({ vibeFilterSettings: request.settings });
+    }
+});
+
 const observer = new MutationObserver(() => {
-    const canvases = document.querySelectorAll('canvas');
-    if (canvases.length > 0) {
-        applySavedFilters();
-        observer.disconnect();
-    }
+    chrome.storage.local.get('vibeFilterSettings', (result) => {
+        const defaults = {
+            grayscale: 0, brightness: 1, sepia: 0, hueRotate: 0, saturate: 100,
+            hideCanvas: false, hideGlow: false,
+            hideMyWaveLabel: false, hideFeedback: false
+        };
+        applySettings(result.vibeFilterSettings || defaults);
+    });
 });
-
 observer.observe(document.body, { childList: true, subtree: true });
-
-// Слушаем обновления
-chrome.runtime.onMessage.addListener((request) => {
-    if (request.action === "updateFilter") {
-        updateFilter(request.settings);
-    }
-});

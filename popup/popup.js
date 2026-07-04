@@ -1,188 +1,145 @@
 document.addEventListener('DOMContentLoaded', function () {
-    chrome.storage.local.get(['vibeFilterSettings'], (result) => {
-        const settings = result.vibeFilterSettings || {
-            grayscale: 0,
-            brightness: 1,
-            sepia: 0,
-            hueRotate: 0
-        };
-
-        // Устанавливаем значения ползунков
-        grayscaleSlider.value = settings.grayscale;
-        brightnessSlider.value = settings.brightness;
-        sepiaSlider.value = settings.sepia;
-        hueSlider.value = settings.hueRotate;
-
-        updateDisplay();
-    });
-
-    // Получаем элементы
     const grayscaleSlider = document.getElementById('grayscale');
     const brightnessSlider = document.getElementById('brightness');
     const sepiaSlider = document.getElementById('sepia');
     const hueSlider = document.getElementById('hue-rotate');
     const saturateSlider = document.getElementById('saturate');
 
-    const grayscaleValue = document.getElementById('grayscale-value');
-    const brightnessValue = document.getElementById('brightness-value');
-    const sepiaValue = document.getElementById('sepia-value');
-    const hueValue = document.getElementById('hue-rotate-value');
-    const saturateValue = document.getElementById('saturate-value');
+    const grayscaleVal = document.getElementById('grayscale-val');
+    const brightnessVal = document.getElementById('brightness-val');
+    const sepiaVal = document.getElementById('sepia-val');
+    const hueVal = document.getElementById('hue-val');
+    const saturateVal = document.getElementById('saturate-val');
 
-    // Функция обновления значений
+    const hideCanvas = document.getElementById('hideCanvas');
+    const hideGlow = document.getElementById('hideGlow');
+    const hideMyWaveLabel = document.getElementById('hideMyWaveLabel');
+    const hideFeedback = document.getElementById('hideFeedback');
+
     function updateDisplay() {
-        grayscaleValue.textContent = grayscaleSlider.value;
-        brightnessValue.textContent = brightnessSlider.value;
-        sepiaValue.textContent = sepiaSlider.value;
-        hueValue.textContent = hueSlider.value + '°';
-        saturateValue.textContent = saturateSlider.value + '%';
+        grayscaleVal.textContent = grayscaleSlider.value;
+        brightnessVal.textContent = brightnessSlider.value;
+        sepiaVal.textContent = sepiaSlider.value;
+        hueVal.textContent = hueSlider.value + '°';
+        saturateVal.textContent = saturateSlider.value + '%';
     }
 
-    // Функция отправки настроек
-    function sendSettings() {
-        const settings = {
-            grayscale: grayscaleSlider.value,
-            brightness: brightnessSlider.value,
-            sepia: sepiaSlider.value,
-            hueRotate: hueSlider.value,
-            saturate: saturateSlider.value
+    function buildSettings() {
+        return {
+            grayscale: parseFloat(grayscaleSlider.value),
+            brightness: parseFloat(brightnessSlider.value),
+            sepia: parseFloat(sepiaSlider.value),
+            hueRotate: parseInt(hueSlider.value),
+            saturate: parseFloat(saturateSlider.value),
+            hideCanvas: hideCanvas.checked,
+            hideGlow: hideGlow.checked,
+            hideMyWaveLabel: hideMyWaveLabel.checked,
+            hideFeedback: hideFeedback.checked
         };
+    }
 
-        chrome.storage.local.set({ vibeFilterSettings: settings });
-
-        chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-            if (tabs.length === 0) return;
-
-            chrome.tabs.sendMessage(tabs[0].id, {
-                action: "updateFilter",
-                settings: settings
-            }).catch(error => {
-                console.error('Message sending failed:', error);
+    function saveAndSend() {
+        const settings = buildSettings();
+        chrome.storage.local.set({ vibeFilterSettings: settings }, () => {
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                if (tabs[0]) {
+                    chrome.tabs.sendMessage(tabs[0].id, {
+                        action: 'updateSettings',
+                        settings: settings
+                    }).catch(() => { });
+                }
             });
         });
     }
 
-    // Функция для сохранения настроек
-    function saveSettings() {
-        const settings = {
-            grayscale: grayscaleSlider.value,
-            brightness: brightnessSlider.value,
-            sepia: sepiaSlider.value,
-            hueRotate: hueSlider.value,
-            saturate: saturateSlider.value
+    chrome.storage.local.get('vibeFilterSettings', (result) => {
+        const defaults = {
+            grayscale: 0,
+            brightness: 1,
+            sepia: 0,
+            hueRotate: 0,
+            saturate: 100,
+            hideCanvas: false,
+            hideGlow: false,
+            hideMyWaveLabel: false,
+            hideFeedback: false
         };
+        const s = result.vibeFilterSettings || defaults;
 
-        // Сохраняем в chrome.storage.local
-        chrome.storage.local.set({ vibeFilterSettings: settings }, () => {
-            console.log('Настройки сохранены:', settings);
+        grayscaleSlider.value = s.grayscale;
+        brightnessSlider.value = s.brightness;
+        sepiaSlider.value = s.sepia;
+        hueSlider.value = s.hueRotate;
+        saturateSlider.value = s.saturate;
+        hideCanvas.checked = s.hideCanvas || false;
+        hideGlow.checked = s.hideGlow || false;
+        hideMyWaveLabel.checked = s.hideMyWaveLabel || false;
+        hideFeedback.checked = s.hideFeedback || false;
+
+        updateDisplay();
+
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs[0]) {
+                chrome.tabs.sendMessage(tabs[0].id, {
+                    action: 'updateSettings',
+                    settings: buildSettings()
+                }).catch(() => { });
+            }
         });
-    }
-
-    // Вызываем saveSettings при изменении ползунков
-    grayscaleSlider.addEventListener('input', () => {
-        updateDisplay();
-        saveSettings();  // Сохраняем автоматически
     });
 
-    brightnessSlider.addEventListener('input', () => {
-        updateDisplay();
-        saveSettings();
+    [grayscaleSlider, brightnessSlider, sepiaSlider, hueSlider, saturateSlider].forEach(el => {
+        el.addEventListener('input', () => {
+            updateDisplay();
+            saveAndSend();
+        });
     });
 
-    sepiaSlider.addEventListener('input', () => {
-        updateDisplay();
-        saveSettings();
+    [hideCanvas, hideGlow, hideMyWaveLabel, hideFeedback].forEach(el => {
+        el.addEventListener('change', saveAndSend);
     });
 
-    hueSlider.addEventListener('input', () => {
-        updateDisplay();
-        saveSettings();
-    });
-
-    saturateSlider.addEventListener('input', () => {
-        updateDisplay();
-        saveSettings();
-    });
-
-    // Загрузка сохранённых настроек
-    chrome.storage.local.get(['vibeFilterSettings'], function (result) {
-        const defaults = { grayscale: 0, brightness: 1, sepia: 0, hueRotate: 0, saturate: 100 };
-        const settings = result.vibeFilterSettings || defaults;
-
-        grayscaleSlider.value = settings.grayscale;
-        brightnessSlider.value = settings.brightness;
-        sepiaSlider.value = settings.sepia;
-        hueSlider.value = settings.hueRotate;
-        saturateSlider.value = settings.saturate;
-
-        updateDisplay();
-        sendSettings(); // Применяем сохранённые настройки сразу после загрузки
-    });
-
-    // Обработчики событий
-    grayscaleSlider.addEventListener('input', function () {
-        updateDisplay();
-        sendSettings();
-    });
-
-    brightnessSlider.addEventListener('input', function () {
-        updateDisplay();
-        sendSettings();
-    });
-
-    sepiaSlider.addEventListener('input', function () {
-        updateDisplay();
-        sendSettings();
-    });
-
-    hueSlider.addEventListener('input', function () {
-        updateDisplay();
-        sendSettings();
-    });
-
-    saturateSlider.addEventListener('input', function () {
-        updateDisplay();
-        sendSettings();
-    });
-
-    // Пресеты
-    document.getElementById('normal-btn').addEventListener('click', function () {
+    document.getElementById('normal-btn').addEventListener('click', () => {
         grayscaleSlider.value = 0;
         brightnessSlider.value = 1;
         sepiaSlider.value = 0;
         hueSlider.value = 0;
         saturateSlider.value = 100;
+        hideCanvas.checked = false;
+        hideGlow.checked = false;
+        hideMyWaveLabel.checked = false;
+        hideFeedback.checked = false;
         updateDisplay();
-        sendSettings();
+        saveAndSend();
     });
 
-    document.getElementById('bw-btn').addEventListener('click', function () {
+    document.getElementById('bw-btn').addEventListener('click', () => {
         grayscaleSlider.value = 1;
         brightnessSlider.value = 0.75;
         sepiaSlider.value = 0;
         hueSlider.value = 0;
         saturateSlider.value = 100;
         updateDisplay();
-        sendSettings();
+        saveAndSend();
     });
 
-    document.getElementById('sepia-btn').addEventListener('click', function () {
+    document.getElementById('sepia-btn').addEventListener('click', () => {
         grayscaleSlider.value = 0.5;
         brightnessSlider.value = 0.65;
         sepiaSlider.value = 1;
         hueSlider.value = 0;
         saturateSlider.value = 100;
         updateDisplay();
-        sendSettings();
+        saveAndSend();
     });
 
-    document.getElementById('hue-btn').addEventListener('click', function () {
+    document.getElementById('hue-btn').addEventListener('click', () => {
         grayscaleSlider.value = 0;
         brightnessSlider.value = 1;
         sepiaSlider.value = 0;
         hueSlider.value = 200;
         saturateSlider.value = 100;
         updateDisplay();
-        sendSettings();
+        saveAndSend();
     });
 });
